@@ -1,0 +1,19 @@
+[project]
+name = "causalkit"
+version = "0.1.0"
+description = "Experimentation and uplift-modeling toolkit: power, SRM, CUPED, sequential testing, CATE models, Qini evaluation."
+requires-python = ">=3.10"
+dependencies = ["numpy", "scipy", "pandas", "scikit-learn"]
+
+[project.optional-dependencies]
+dev = ["pytest", "matplotlib"]
+
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools]
+packages = ["causalkit"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
