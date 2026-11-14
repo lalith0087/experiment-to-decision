@@ -78,3 +78,30 @@ def test_oracle_ranking_has_monotone_deciles():
     assert d.obs_uplift.iloc[0] > d.obs_uplift.iloc[-1]
     f, g, r = qini_curve(df.y, df.t, tau)
     assert g[-1] == pytest.approx(r[-1])
+
+
+def test_policy_gain_matches_ground_truth_in_expectation():
+    from causalkit import policy_curve
+    df, tau = make_uplift_data(n=200000, seed=5)
+    c = policy_curve(df.y, df.t, tau, cost=0.0)   # oracle ranking
+    # truth: mean of tau over top-frac share, times frac
+    k = int(0.5 * len(tau)); true = np.sort(tau)[::-1][:k].sum() / len(tau)
+    est = c.loc[np.isclose(c.frac, 0.5), "gain"].iloc[0]
+    assert est == pytest.approx(true, abs=0.03)
+
+
+def test_policy_honest_when_scores_are_random():
+    """Random scores + costly treatment: learned policy must not claim a big win over nothing."""
+    from causalkit import evaluate_policy
+    rng = np.random.default_rng(0)
+    n = 20000
+    t = rng.integers(0, 2, n); y = rng.normal(size=n) + 0.1 * t
+    r = evaluate_policy(y, t, rng.normal(size=n), cost=0.3, n_boot=100)
+    assert r["policy_ci"][1] < 0.1 and r["treat_all_gain"] < 0
+
+
+def test_policy_beats_treat_all_when_effect_is_heterogeneous():
+    from causalkit import evaluate_policy
+    df, tau = make_uplift_data(n=30000, seed=6)
+    r = evaluate_policy(df.y, df.t, tau, cost=0.5, n_boot=100)
+    assert r["policy_minus_all_ci"][0] > 0

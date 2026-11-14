@@ -10,12 +10,13 @@ A small, tested toolkit for the full experimentation workflow: **design → heal
 | Monitor | `sequential` | mSPRT always-valid p-values (safe to peek) |
 | Target | `uplift` | T-, X- and doubly-robust learners for heterogeneous effects |
 | Evaluate | `evaluate` | Qini curve, Qini area (AUUC), uplift-by-decile |
+| Decide | `policy` | Profit-based targeting with out-of-sample, bootstrapped gain vs. treat-all |
 | Test | `synthetic` | Data with known ground-truth CATE |
 
 ## Quickstart
 ```bash
 pip install -e ".[dev]"
-pytest                      # 12 tests, incl. CI-coverage and peeking Type-I checks
+pytest                      # 15 tests, incl. CI-coverage and peeking Type-I checks
 python examples/demo.py     # reproduces the numbers below, writes docs/qini.png
 ```
 
@@ -27,13 +28,36 @@ python examples/demo.py     # reproduces the numbers below, writes docs/qini.png
 
 ![Qini](docs/qini.png)
 
+## Real data: Hillstrom email experiment (64k customers, randomized)
+`python examples/hillstrom.py` (download the CSV to `data/hillstrom.csv` first; it is git-ignored).
+- Randomization check passed (SRM p=0.90). Any email lifted site visits by **+6.1 pts** (SE 0.28 pts);
+  men's email +7.7 pts, women's +4.5 pts, versus 10.6% baseline.
+- **CUPED did nothing here** (0.4% variance reduction): purchase history barely predicts visits, so
+  there is no variance to remove. It only helps with a strong pre-period covariate.
+- Uplift models (5-fold out-of-fold, outcome = visit) beat random targeting: Qini area 0.0033 (T),
+  0.0036 (X), 0.0036 (DR) vs 0.0007 random. **The three learners are statistically indistinguishable**
+  (fold SD 0.0014-0.0028), and the decile table is noisy rather than cleanly monotone, so the
+  heterogeneity signal is real but weak in these 8 features.
+
+![Hillstrom Qini](docs/hillstrom_qini.png)
+
+### Profit-based targeting (`examples/hillstrom_policy.py`)
+`evaluate_policy` picks the share of customers to email on one half of the data, scores it on the other
+half, and bootstraps the whole procedure (IPW estimates, so no model of the outcome is trusted).
+Value = spend, cost swept from $0.10 to $0.70 per email (average email uplift in spend is about $0.60):
+- **Emailing everyone** earns about $0.50/customer at a $0.10 cost, falls to about $0.10 at $0.50, and loses money at $0.70.
+- **Targeting did not significantly beat emailing everyone at any cost level.** Every interval for
+  "targeted minus email-all" includes zero (e.g. at $0.70: +0.05 to +0.14 point estimates, CIs spanning -0.13 to +0.38).
+  At high cost the point estimates favor targeting, but 64k customers with heavy-tailed spend cannot confirm it.
+- Takeaway: on this dataset the decision is driven by **email cost vs. average uplift**, not by the models.
+  The tool's contribution is saying so with calibrated uncertainty instead of reporting an optimistic number.
+
 ## Validation, not just code
 Tests check statistical *properties*: CUPED 95% CIs cover the truth 90-99% of the time over 200
 simulated experiments, mSPRT holds its error rate under continuous peeking, and learners must beat a
 random ranking on holdout Qini.
 
 ## Caveats
-- Results above are on synthetic data, where the effect is easy to recover. Real-data results
-  (Criteo / Hillstrom) are the next step and will be much noisier.
+- The synthetic results are easy by construction; the Hillstrom section is the realistic benchmark.
 - mSPRT uses a plug-in variance estimate and needs ~30 users per arm before it starts.
 - Learners assume a randomized experiment (propensity = observed treated share).
