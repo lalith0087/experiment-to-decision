@@ -29,6 +29,17 @@ pytest                      # 15 tests, incl. CI-coverage and peeking Type-I che
 python examples/demo.py     # reproduces the numbers below, writes docs/qini.png
 ```
 
+## Interactive demo
+```bash
+pip install -e ".[app]"
+streamlit run app/streamlit_app.py
+```
+Four tabs on simulated data with a known ground truth: **Power** (sample size curves), **CUPED**
+(slide the pre-period correlation and watch variance reduction follow), **Peeking** (naive vs mSPRT
+false-positive rates for your check frequency), and **Targeting** (out-of-fold uplift scores, Qini curve,
+and a profit policy with a bootstrapped "targeted minus treat-everyone" interval). The real Hillstrom
+analysis stays in `examples/` because that dataset is not redistributed here.
+
 ## Results (synthetic data with known ground truth, n=30k)
 - **CUPED** cut ATE standard error from 0.032 to 0.018 (**~68% variance reduction**), same estimand.
 - **mSPRT** stopped at 5,250 of 30,000 users on a real effect; under the null, peeking after every

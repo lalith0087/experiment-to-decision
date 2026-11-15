@@ -8,6 +8,7 @@ dependencies = ["numpy", "scipy", "pandas", "scikit-learn"]
 
 [project.optional-dependencies]
 dev = ["pytest", "matplotlib"]
+app = ["streamlit"]
 
 [build-system]
 requires = ["setuptools>=61"]
