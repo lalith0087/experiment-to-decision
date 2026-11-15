@@ -1,5 +1,7 @@
 # experiment-to-decision
 
+**[Try the live demo ↗](https://experiment-to-decision.streamlit.app)** (free tier: the first visit after idle takes a few seconds to wake)
+
 A small, tested toolkit for the full experimentation workflow: **design → health-check → analyze → target**.
 
 ![Peeking demo](docs/peeking.gif)
@@ -30,6 +32,8 @@ python examples/demo.py     # reproduces the numbers below, writes docs/qini.png
 ```
 
 ## Interactive demo
+Live at https://experiment-to-decision.streamlit.app, or run it yourself:
+
 ```bash
 pip install -e ".[app]"
 streamlit run app/streamlit_app.py
