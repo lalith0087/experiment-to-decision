@@ -1,4 +1,4 @@
-# causalkit
+# experiment-to-decision
 
 A small, tested toolkit for the full experimentation workflow: **design → health-check → analyze → target**.
 
@@ -12,6 +12,8 @@ A small, tested toolkit for the full experimentation workflow: **design → heal
 | Evaluate | `evaluate` | Qini curve, Qini area (AUUC), uplift-by-decile |
 | Decide | `policy` | Profit-based targeting with out-of-sample, bootstrapped gain vs. treat-all |
 | Test | `synthetic` | Data with known ground-truth CATE |
+
+The Python package is named `causalkit` (`from causalkit import cuped_ate, DRLearner`).
 
 ## Quickstart
 ```bash
