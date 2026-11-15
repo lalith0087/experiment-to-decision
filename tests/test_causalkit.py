@@ -105,3 +105,50 @@ def test_policy_beats_treat_all_when_effect_is_heterogeneous():
     df, tau = make_uplift_data(n=30000, seed=6)
     r = evaluate_policy(df.y, df.t, tau, cost=0.5, n_boot=100)
     assert r["policy_minus_all_ci"][0] > 0
+
+
+def test_calibration_slope_is_one_for_oracle_scores():
+    from causalkit import calibration_test
+    df, tau = make_uplift_data(n=60000, seed=11)
+    r = calibration_test(df.y, df.t, tau)
+    assert r["slope_ci"][0] < 1 < r["slope_ci"][1]
+    assert r["p_slope_zero"] < 1e-6
+
+
+def test_calibration_rejects_nothing_for_noise_scores():
+    from causalkit import calibration_test
+    rng = np.random.default_rng(0); hits, reps = 0, 200
+    for s in range(reps):
+        n = 3000
+        t = rng.integers(0, 2, n); y = rng.normal(size=n) + 0.3 * t   # constant effect
+        hits += calibration_test(y, t, rng.normal(size=n))["p_slope_zero"] < 0.05
+    assert hits / reps < 0.10
+
+
+def test_calibration_no_false_heterogeneity_from_fitted_model():
+    """Constant true effect: a learner will find 'patterns' in noise, but out-of-fold
+    calibration should rarely call the heterogeneity real (nominal 5%)."""
+    from sklearn.model_selection import KFold
+    from causalkit import calibration_test
+    hits, reps = 0, 40
+    for s in range(reps):
+        rng = np.random.default_rng(s); n = 3000
+        X = rng.normal(size=(n, 3)); t = rng.integers(0, 2, n)
+        y = X[:, 0] + 0.3 * t + rng.normal(size=n)
+        oof = np.zeros(n)
+        for tr, te in KFold(2, shuffle=True, random_state=0).split(X):
+            oof[te] = TLearner().fit(X[tr], t[tr], y[tr]).predict(X[te])
+        hits += calibration_test(y, t, oof)["p_slope_zero"] < 0.05
+    assert hits / reps < 0.15
+
+
+def test_group_effects_gap_and_bootstrap_auuc():
+    from causalkit import group_effects, bootstrap_auuc, compare_auuc
+    df, tau = make_uplift_data(n=30000, seed=12)
+    tbl, gap = group_effects(df.y, df.t, tau)
+    assert gap["ci"][0] > 0 and tbl.effect.iloc[0] > tbl.effect.iloc[-1]
+    rnd = np.random.default_rng(1).normal(size=len(df))
+    assert bootstrap_auuc(df.y, df.t, tau, n_boot=60)["ci"][0] > 0
+    lo, hi = bootstrap_auuc(df.y, df.t, rnd, n_boot=60)["ci"]
+    assert lo < 0 < hi
+    assert compare_auuc(df.y, df.t, tau, rnd, n_boot=60)["distinguishable"]

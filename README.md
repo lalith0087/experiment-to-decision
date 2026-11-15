@@ -22,6 +22,7 @@ observation up to n=3,000: naive test **39%** false positives, mSPRT **2.7%** (n
 | Monitor | `sequential` | mSPRT always-valid p-values (safe to peek) |
 | Target | `uplift` | T-, X- and doubly-robust learners for heterogeneous effects |
 | Evaluate | `evaluate` | Qini curve, Qini area (AUUC), uplift-by-decile |
+| Trust | `inference` | Calibration test, per-group effects, bootstrap Qini intervals, paired model comparison |
 | Decide | `policy` | Profit-based targeting with out-of-sample, bootstrapped gain vs. treat-all |
 | Test | `synthetic` | Data with known ground-truth CATE |
 
@@ -30,7 +31,7 @@ The Python package is named `causalkit` (`from causalkit import cuped_ate, DRLea
 ## Quickstart
 ```bash
 pip install -e ".[dev]"
-pytest                      # 15 tests, incl. CI-coverage and peeking Type-I checks
+pytest                      # 19 tests, incl. CI-coverage and peeking Type-I checks
 python examples/demo.py     # reproduces the numbers below, writes docs/qini.png
 ```
 
@@ -78,6 +79,17 @@ Value = spend, cost swept from $0.10 to $0.70 per email (average email uplift in
   At high cost the point estimates favor targeting, but 64k customers with heavy-tailed spend cannot confirm it.
 - Takeaway: on this dataset the decision is driven by **email cost vs. average uplift**, not by the models.
   The tool's contribution is saying so with calibrated uncertainty instead of reporting an optimistic number.
+
+### Is the heterogeneity real? (`examples/hillstrom_inference.py`)
+Calibration test (regress the IPW outcome on the out-of-fold score; slope 1 = calibrated, 0 = no signal),
+per-quintile effects, and bootstrap Qini intervals:
+- **Visits: real, but the models overstate it.** All three slopes exclude 0 (p < 0.02). The top-minus-bottom
+  quintile gap is about +2.4 points (95% CI 0.6 to 4.1). Calibration slopes: T-learner **0.27** (CI 0.06 to 0.47),
+  X-learner **0.58**, DR-learner **0.75** (CI 0.40 to 1.10, consistent with calibrated). The T-learner's predicted
+  differences are mostly noise; the DR-learner is the only one whose scale is defensible.
+- **Spend: no evidence at all.** Every slope interval includes 0, every top-minus-bottom gap includes 0, and every
+  Qini-area interval includes 0. This explains the policy result above: there was no usable spend signal to target on.
+- **The learners are statistically indistinguishable** on Qini area (paired bootstrap, every difference interval includes 0).
 
 ## Validation, not just code
 Tests check statistical *properties*: CUPED 95% CIs cover the truth 90-99% of the time over 200

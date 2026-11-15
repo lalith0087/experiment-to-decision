@@ -52,6 +52,14 @@ spend, and I swept the cost per email from $0.10 to $0.70 (average spend uplift 
 64,000 customers with heavy-tailed spend can't confirm it. On this dataset the decision was driven by email
 cost versus average uplift, not by the models.
 
+### Was the heterogeneity even real?
+
+A calibration test settles this. For visits, yes: the top-minus-bottom quintile gap is about +2.4 points
+(95% CI 0.6 to 4.1), so there is genuine heterogeneity. But the models overstate it. Calibration slopes were
+0.27 (T-learner), 0.58 (X) and 0.75 (doubly-robust); a slope of 1 means calibrated. For spend there was no
+evidence of heterogeneity at all (every interval included zero), which is why the profit policy could not beat
+treat-everyone. The negative result had a cause, and the test finds it.
+
 ## What I'd take from it
 
 - Validate against known truth first, then expect real data to be much less kind.
@@ -63,6 +71,7 @@ cost versus average uplift, not by the models.
 - Hillstrom is one dataset with one email campaign. Spend is heavy-tailed, so profit estimates are noisy.
 - mSPRT uses a plug-in variance estimate and needs about 30 users per arm before it starts.
 - The learners assume a randomized experiment (propensity equals the observed treated share).
+- The learners are indistinguishable on Qini area; I cannot say which is best.
 - I did not try an ML-predicted covariate for CUPED (CUPAC), which might rescue the Hillstrom result.
 
 Code, tests and the demo: [github.com/lalith0087/experiment-to-decision](https://github.com/lalith0087/experiment-to-decision).
