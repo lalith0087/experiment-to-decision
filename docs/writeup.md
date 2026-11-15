@@ -41,6 +41,11 @@ email, a women's email, or nothing.
   indistinguishable (fold-to-fold variation was as large as their differences), and the decile table was noisy
   rather than cleanly monotone. There is weak but real heterogeneity in these 8 features.
 
+I also tried to rescue CUPED with an ML-predicted covariate (CUPAC, boosted trees on all pre-experiment
+features). Best case was 2.7% variance reduction on visits and under 0.2% on spend. The covariate's correlation
+with the outcome was 0.15, and variance reduction cannot exceed that squared. So the disappointing CUPED number
+was a limit of the data, not of the method.
+
 ## 4. The decision question: should we target, or email everyone?
 
 This is where a model has to earn its keep. I built a policy layer that picks the share of customers to treat on
@@ -72,6 +77,5 @@ treat-everyone. The negative result had a cause, and the test finds it.
 - mSPRT uses a plug-in variance estimate and needs about 30 users per arm before it starts.
 - The learners assume a randomized experiment (propensity equals the observed treated share).
 - The learners are indistinguishable on Qini area; I cannot say which is best.
-- I did not try an ML-predicted covariate for CUPED (CUPAC), which might rescue the Hillstrom result.
 
 Code, tests and the demo: [github.com/lalith0087/experiment-to-decision](https://github.com/lalith0087/experiment-to-decision).

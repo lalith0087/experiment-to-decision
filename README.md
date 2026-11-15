@@ -18,7 +18,7 @@ observation up to n=3,000: naive test **39%** false positives, mSPRT **2.7%** (n
 |---|---|---|
 | Design | `power` | Sample size / minimum detectable effect (means and proportions) |
 | Health | `diagnostics` | Sample Ratio Mismatch (chi-square) |
-| Analyze | `variance` | ATE with CIs; CUPED variance reduction |
+| Analyze | `variance` | ATE with CIs; CUPED and CUPAC (ML-predicted covariate) variance reduction |
 | Monitor | `sequential` | mSPRT always-valid p-values (safe to peek) |
 | Target | `uplift` | T-, X- and doubly-robust learners for heterogeneous effects |
 | Evaluate | `evaluate` | Qini curve, Qini area (AUUC), uplift-by-decile |
@@ -31,7 +31,7 @@ The Python package is named `causalkit` (`from causalkit import cuped_ate, DRLea
 ## Quickstart
 ```bash
 pip install -e ".[dev]"
-pytest                      # 19 tests, incl. CI-coverage and peeking Type-I checks
+pytest                      # 22 tests, incl. CI-coverage and peeking Type-I checks
 python examples/demo.py     # reproduces the numbers below, writes docs/qini.png
 ```
 
@@ -68,6 +68,17 @@ analysis stays in `examples/` because that dataset is not redistributed here.
   heterogeneity signal is real but weak in these 8 features.
 
 ![Hillstrom Qini](docs/hillstrom_qini.png)
+
+### Can an ML covariate rescue CUPED? (`examples/hillstrom_cupac.py`)
+No. I tried CUPAC (boosted trees on all 8 pre-experiment features, cross-fitted on control users) against CUPED
+on purchase history and linear CUPED on all 8 features:
+- **Visits:** variance reduction was 0.4% (history), **2.7% (all 8, linear)** and **2.2% (CUPAC)**. The best
+  case shrinks the standard error by about 1.4%.
+- **Conversion and spend:** all methods stayed under 0.2%.
+- The prediction's correlation with the outcome was only 0.15 for visits, and variance reduction is capped by
+  that correlation squared. The pre-experiment features simply do not predict these outcomes much, so the weak
+  CUPED result was the data's limit, not the method's.
+On synthetic data with a non-linear baseline, CUPAC does beat linear CUPED (covered by the tests).
 
 ### Profit-based targeting (`examples/hillstrom_policy.py`)
 `evaluate_policy` picks the share of customers to email on one half of the data, scores it on the other

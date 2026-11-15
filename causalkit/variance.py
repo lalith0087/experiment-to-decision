@@ -33,3 +33,28 @@ def cuped_ate(y, t, x, alpha=0.05):
     out = naive_ate(y_adj, t, alpha)
     out["variance_reduction"] = float(1 - y_adj.var() / y.var())
     return out
+
+
+def cupac_ate(y, t, X, model=None, n_splits=5, seed=0, alpha=0.05):
+    """CUPAC: CUPED with an ML-predicted covariate built from pre-experiment features `X`.
+
+    A regressor learns E[y | X] on control users only; predictions are cross-fitted so no
+    user's covariate comes from a model that saw their own outcome. Because the prediction is a
+    function of pre-treatment features only, it is independent of assignment and the ATE
+    estimate stays unbiased. It reduces variance only to the extent X predicts y non-linearly
+    or in combination (a strong linear covariate is already handled by cuped_ate).
+    """
+    from sklearn.base import clone
+    from sklearn.ensemble import HistGradientBoostingRegressor
+    from sklearn.model_selection import KFold
+
+    y, t = np.asarray(y, float), np.asarray(t).astype(bool)
+    X = np.asarray(X, float)
+    model = model or HistGradientBoostingRegressor(max_depth=3, max_iter=100, learning_rate=0.05)
+    pred = np.zeros(len(y))
+    for tr, te in KFold(n_splits, shuffle=True, random_state=seed).split(X):
+        ctrl = tr[~t[tr]]
+        pred[te] = clone(model).fit(X[ctrl], y[ctrl]).predict(X[te])
+    out = cuped_ate(y, t, pred, alpha)
+    out["covariate_corr"] = float(np.corrcoef(pred, y)[0, 1])
+    return out

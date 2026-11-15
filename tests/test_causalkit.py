@@ -152,3 +152,36 @@ def test_group_effects_gap_and_bootstrap_auuc():
     lo, hi = bootstrap_auuc(df.y, df.t, rnd, n_boot=60)["ci"]
     assert lo < 0 < hi
     assert compare_auuc(df.y, df.t, tau, rnd, n_boot=60)["distinguishable"]
+
+
+def test_cupac_beats_linear_cuped_on_nonlinear_baseline():
+    from causalkit import cupac_ate
+    df, tau = make_uplift_data(n=20000, seed=21)
+    feats = [c for c in df.columns if c.startswith("x")]
+    lin = cuped_ate(df.y, df.t, df[feats].values)      # linear adjustment on raw features
+    cp = cupac_ate(df.y, df.t, df[feats].values)        # captures the x3**2 term
+    assert cp["se"] < lin["se"] < naive_ate(df.y, df.t)["se"]
+    assert cp["variance_reduction"] > 0.4
+
+
+def test_cupac_unbiased_and_covers():
+    from sklearn.ensemble import HistGradientBoostingRegressor
+    from causalkit import cupac_ate
+    m = HistGradientBoostingRegressor(max_depth=3, max_iter=40, learning_rate=0.1)
+    cover, reps = 0, 60
+    for s in range(reps):
+        df, tau = make_uplift_data(n=3000, seed=300 + s)
+        feats = [c for c in df.columns if c.startswith("x")]
+        lo, hi = cupac_ate(df.y, df.t, df[feats].values, model=m, n_splits=3)["ci"]
+        cover += lo <= tau.mean() <= hi
+    assert 0.88 <= cover / reps <= 1.0
+
+
+def test_cupac_does_nothing_when_features_are_noise():
+    from causalkit import cupac_ate
+    rng = np.random.default_rng(0); n = 8000
+    X = rng.normal(size=(n, 4)); t = rng.integers(0, 2, n)
+    y = rng.normal(size=n) + 0.2 * t
+    r = cupac_ate(y, t, X)
+    assert abs(r["variance_reduction"]) < 0.03
+    assert r["ci"][0] < 0.2 < r["ci"][1]
