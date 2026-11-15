@@ -1,8 +1,11 @@
 # experiment-to-decision
 
+[![CI](https://github.com/lalith0087/experiment-to-decision/actions/workflows/ci.yml/badge.svg)](https://github.com/lalith0087/experiment-to-decision/actions/workflows/ci.yml) [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+
 **[Try the live demo ↗](https://experiment-to-decision.streamlit.app)** (free tier: the first visit after idle takes a few seconds to wake)
 
 A small, tested toolkit for the full experimentation workflow: **design → health-check → analyze → target**.
+Read the write-up: [what real data taught me about my own toolkit](docs/writeup.md).
 
 ![Peeking demo](docs/peeking.gif)
 
