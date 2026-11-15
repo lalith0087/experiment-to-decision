@@ -2,6 +2,13 @@
 
 A small, tested toolkit for the full experimentation workflow: **design → health-check → analyze → target**.
 
+![Peeking demo](docs/peeking.gif)
+
+*Both tests watch the same experiment with **no true effect**. The naive p-value dips below 0.05 if you
+check often enough; the mSPRT p-value does not. This one stream was picked for illustration (regenerate with
+`python examples/make_gif.py`). The rates over 300 simulated null experiments, checking after every
+observation up to n=3,000: naive test **39%** false positives, mSPRT **2.7%** (nominal 5%).*
+
 | Stage | Module | What it does |
 |---|---|---|
 | Design | `power` | Sample size / minimum detectable effect (means and proportions) |
@@ -63,3 +70,6 @@ random ranking on holdout Qini.
 - The synthetic results are easy by construction; the Hillstrom section is the realistic benchmark.
 - mSPRT uses a plug-in variance estimate and needs ~30 users per arm before it starts.
 - Learners assume a randomized experiment (propensity = observed treated share).
+
+## License
+MIT, see [LICENSE](LICENSE).
